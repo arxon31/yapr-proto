@@ -8,8 +8,6 @@ service SSO {
   rpc Register (RegisterRequest) returns (RegisterResponse) {}
   rpc Login (LoginRequest) returns (LoginResponse) {}
   rpc Logout (LogoutRequest) returns (LogoutResponse) {}
-  rpc Refresh (RefreshRequest) returns (RefreshResponse) {}
-  rpc Authenticate (AuthenticateRequest) returns (AuthenticateResponse) {}
 }
 
 message LoginRequest {
@@ -38,19 +36,4 @@ message RegisterResponse {
   int64 user_id = 1;
 }
 
-message RefreshRequest {
-  string token = 1;
-}
-
-message RefreshResponse {
-  string token = 1;
-}
-
-message AuthenticateRequest {
-  string token = 1;
-}
-
-message AuthenticateResponse {
-  int64 user_id = 1;
-}
 
