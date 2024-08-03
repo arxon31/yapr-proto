@@ -13,10 +13,10 @@ service GophKeep {
     rpc GetCredentials (GetByMetaRequest) returns (GetCredentialsResponse) {}
     rpc GetBankCredentials (GetByMetaRequest) returns (GetBankCredentialsResponse) {}
     rpc GetFile (GetByMetaRequest) returns (GetFileResponse) {}
-    rpc StartGetFileStream (stream StartRequest) returns (stream FileChunk) {}
 
     rpc ListAll (ListAllRequest) returns (ListAllResponse) {}
 }
+
 
 message SaveCredentialsRequest {
     Meta meta = 1;
@@ -52,17 +52,6 @@ message GetByMetaRequest {
     Meta meta = 1;
 }
 
-message GetFileResponse {
-    bytes session_hash = 1;
-    string name = 2;
-    FileType type = 3;
-    int64 chunks = 4;
-}
-
-message StartRequest {
-    bytes session_hash = 1;
-}
-
 message GetCredentialsResponse {
     string username = 1;
     string password = 2;
@@ -72,6 +61,10 @@ message GetBankCredentialsResponse {
     string card_number = 1;
     string owner = 2;
     int64 cvv = 3;
+}
+
+message GetFileResponse {
+    string url = 1;
 }
 
 message ListAllRequest{}
