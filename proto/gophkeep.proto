@@ -5,18 +5,30 @@ package proto;
 option go_package = "./gophkeep";
 
 service GophKeep {
-    rpc SaveCredentials (SaveCredentialsRequest) returns (Status) {}
-    rpc SaveBankCredentials (SaveBankCredentialsRequest) returns (Status) {}
-    rpc SaveFile (SaveFileRequest) returns (SaveFileResponse) {}
-    rpc StartSaveFileStream (stream FileChunk) returns (stream Status) {}
-
+    rpc SaveCredentials (SaveCredentialsRequest) returns (SaveStatus) {}
     rpc GetCredentials (GetByMetaRequest) returns (GetCredentialsResponse) {}
-    rpc GetBankCredentials (GetByMetaRequest) returns (GetBankCredentialsResponse) {}
-    rpc GetFile (GetByMetaRequest) returns (GetFileResponse) {}
+
+    rpc SaveCard (SaveCardRequest) returns (SaveStatus) {}
+    rpc GetCard (GetByMetaRequest) returns (GetCardResponse) {}
+
+
+    rpc SaveAttachment (SaveFileRequest) returns (SaveFileResponse) {}
+    rpc StartSaveFileStream (stream Chunk) returns (SaveStatus) {}
+    rpc GetAttachment (GetByMetaRequest) returns (GetAttachmentResponse) {}
+    rpc StartGetFileStream (StartGetFileStreamRequest) returns (stream Chunk) {}
 
     rpc ListAll (ListAllRequest) returns (ListAllResponse) {}
 }
 
+
+message Meta {
+    string meta = 1;
+}
+
+message SaveStatus {
+    bool success = 1;
+    optional string error = 2;
+}
 
 message SaveCredentialsRequest {
     Meta meta = 1;
@@ -24,9 +36,9 @@ message SaveCredentialsRequest {
     string password = 3;
 }
 
-message SaveBankCredentialsRequest{
+message SaveCardRequest{
     Meta meta = 1;
-    string card_number = 2;
+    string number = 2;
     string owner = 3;
     int64 cvv = 4;
 }
@@ -34,18 +46,15 @@ message SaveBankCredentialsRequest{
 message SaveFileRequest {
     Meta meta = 1;
     string name = 2;
-    FileType type = 3;
-    int64 chunks = 4;
 }
 
 message SaveFileResponse {
     bytes session_hash = 1;
 }
 
-message FileChunk {
+message Chunk {
     bytes session_hash = 1;
-    bytes chunk = 2;
-    int64 chunk_number = 3;
+    bytes content = 2;
 }
 
 message GetByMetaRequest {
@@ -57,32 +66,32 @@ message GetCredentialsResponse {
     string password = 2;
 }
 
-message GetBankCredentialsResponse {
+message GetCardResponse {
     string card_number = 1;
     string owner = 2;
     int64 cvv = 3;
 }
 
-message GetFileResponse {
-    string url = 1;
+message GetAttachmentResponse {
+    bytes session_hash = 1;
 }
 
-message ListAllRequest{}
-
-message ListAllResponse{
-    repeated Meta metas = 1;
+message StartGetFileStreamRequest {
+    bytes session_hash = 1;
 }
 
-message Meta {
-    string meta = 1;
+message ListAllRequest {}
+
+message ListAllResponse {
+    map<string, Type> items = 1;
 }
 
-message Status {
-    bool success = 1;
-}
-
-enum FileType {
+enum Type {
     UNDEFINED = 0;
-    BINARY = 1;
-    TEXT = 2;
+    CREDENTIALS = 1;
+    CARD = 2;
+    ATTACHMENT = 3;
 }
+
+
+

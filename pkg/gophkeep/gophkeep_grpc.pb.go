@@ -20,12 +20,13 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	GophKeep_SaveCredentials_FullMethodName     = "/proto.GophKeep/SaveCredentials"
-	GophKeep_SaveBankCredentials_FullMethodName = "/proto.GophKeep/SaveBankCredentials"
-	GophKeep_SaveFile_FullMethodName            = "/proto.GophKeep/SaveFile"
-	GophKeep_StartSaveFileStream_FullMethodName = "/proto.GophKeep/StartSaveFileStream"
 	GophKeep_GetCredentials_FullMethodName      = "/proto.GophKeep/GetCredentials"
-	GophKeep_GetBankCredentials_FullMethodName  = "/proto.GophKeep/GetBankCredentials"
-	GophKeep_GetFile_FullMethodName             = "/proto.GophKeep/GetFile"
+	GophKeep_SaveCard_FullMethodName            = "/proto.GophKeep/SaveCard"
+	GophKeep_GetCard_FullMethodName             = "/proto.GophKeep/GetCard"
+	GophKeep_SaveAttachment_FullMethodName      = "/proto.GophKeep/SaveAttachment"
+	GophKeep_StartSaveFileStream_FullMethodName = "/proto.GophKeep/StartSaveFileStream"
+	GophKeep_GetAttachment_FullMethodName       = "/proto.GophKeep/GetAttachment"
+	GophKeep_StartGetFileStream_FullMethodName  = "/proto.GophKeep/StartGetFileStream"
 	GophKeep_ListAll_FullMethodName             = "/proto.GophKeep/ListAll"
 )
 
@@ -33,13 +34,14 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GophKeepClient interface {
-	SaveCredentials(ctx context.Context, in *SaveCredentialsRequest, opts ...grpc.CallOption) (*Status, error)
-	SaveBankCredentials(ctx context.Context, in *SaveBankCredentialsRequest, opts ...grpc.CallOption) (*Status, error)
-	SaveFile(ctx context.Context, in *SaveFileRequest, opts ...grpc.CallOption) (*SaveFileResponse, error)
-	StartSaveFileStream(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[FileChunk, Status], error)
+	SaveCredentials(ctx context.Context, in *SaveCredentialsRequest, opts ...grpc.CallOption) (*SaveStatus, error)
 	GetCredentials(ctx context.Context, in *GetByMetaRequest, opts ...grpc.CallOption) (*GetCredentialsResponse, error)
-	GetBankCredentials(ctx context.Context, in *GetByMetaRequest, opts ...grpc.CallOption) (*GetBankCredentialsResponse, error)
-	GetFile(ctx context.Context, in *GetByMetaRequest, opts ...grpc.CallOption) (*GetFileResponse, error)
+	SaveCard(ctx context.Context, in *SaveCardRequest, opts ...grpc.CallOption) (*SaveStatus, error)
+	GetCard(ctx context.Context, in *GetByMetaRequest, opts ...grpc.CallOption) (*GetCardResponse, error)
+	SaveAttachment(ctx context.Context, in *SaveFileRequest, opts ...grpc.CallOption) (*SaveFileResponse, error)
+	StartSaveFileStream(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[Chunk, SaveStatus], error)
+	GetAttachment(ctx context.Context, in *GetByMetaRequest, opts ...grpc.CallOption) (*GetAttachmentResponse, error)
+	StartGetFileStream(ctx context.Context, in *StartGetFileStreamRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Chunk], error)
 	ListAll(ctx context.Context, in *ListAllRequest, opts ...grpc.CallOption) (*ListAllResponse, error)
 }
 
@@ -51,48 +53,15 @@ func NewGophKeepClient(cc grpc.ClientConnInterface) GophKeepClient {
 	return &gophKeepClient{cc}
 }
 
-func (c *gophKeepClient) SaveCredentials(ctx context.Context, in *SaveCredentialsRequest, opts ...grpc.CallOption) (*Status, error) {
+func (c *gophKeepClient) SaveCredentials(ctx context.Context, in *SaveCredentialsRequest, opts ...grpc.CallOption) (*SaveStatus, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Status)
+	out := new(SaveStatus)
 	err := c.cc.Invoke(ctx, GophKeep_SaveCredentials_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
-
-func (c *gophKeepClient) SaveBankCredentials(ctx context.Context, in *SaveBankCredentialsRequest, opts ...grpc.CallOption) (*Status, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Status)
-	err := c.cc.Invoke(ctx, GophKeep_SaveBankCredentials_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *gophKeepClient) SaveFile(ctx context.Context, in *SaveFileRequest, opts ...grpc.CallOption) (*SaveFileResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SaveFileResponse)
-	err := c.cc.Invoke(ctx, GophKeep_SaveFile_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *gophKeepClient) StartSaveFileStream(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[FileChunk, Status], error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &GophKeep_ServiceDesc.Streams[0], GophKeep_StartSaveFileStream_FullMethodName, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &grpc.GenericClientStream[FileChunk, Status]{ClientStream: stream}
-	return x, nil
-}
-
-// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type GophKeep_StartSaveFileStreamClient = grpc.BidiStreamingClient[FileChunk, Status]
 
 func (c *gophKeepClient) GetCredentials(ctx context.Context, in *GetByMetaRequest, opts ...grpc.CallOption) (*GetCredentialsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
@@ -104,25 +73,77 @@ func (c *gophKeepClient) GetCredentials(ctx context.Context, in *GetByMetaReques
 	return out, nil
 }
 
-func (c *gophKeepClient) GetBankCredentials(ctx context.Context, in *GetByMetaRequest, opts ...grpc.CallOption) (*GetBankCredentialsResponse, error) {
+func (c *gophKeepClient) SaveCard(ctx context.Context, in *SaveCardRequest, opts ...grpc.CallOption) (*SaveStatus, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetBankCredentialsResponse)
-	err := c.cc.Invoke(ctx, GophKeep_GetBankCredentials_FullMethodName, in, out, cOpts...)
+	out := new(SaveStatus)
+	err := c.cc.Invoke(ctx, GophKeep_SaveCard_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *gophKeepClient) GetFile(ctx context.Context, in *GetByMetaRequest, opts ...grpc.CallOption) (*GetFileResponse, error) {
+func (c *gophKeepClient) GetCard(ctx context.Context, in *GetByMetaRequest, opts ...grpc.CallOption) (*GetCardResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetFileResponse)
-	err := c.cc.Invoke(ctx, GophKeep_GetFile_FullMethodName, in, out, cOpts...)
+	out := new(GetCardResponse)
+	err := c.cc.Invoke(ctx, GophKeep_GetCard_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
+
+func (c *gophKeepClient) SaveAttachment(ctx context.Context, in *SaveFileRequest, opts ...grpc.CallOption) (*SaveFileResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SaveFileResponse)
+	err := c.cc.Invoke(ctx, GophKeep_SaveAttachment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gophKeepClient) StartSaveFileStream(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[Chunk, SaveStatus], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &GophKeep_ServiceDesc.Streams[0], GophKeep_StartSaveFileStream_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[Chunk, SaveStatus]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type GophKeep_StartSaveFileStreamClient = grpc.ClientStreamingClient[Chunk, SaveStatus]
+
+func (c *gophKeepClient) GetAttachment(ctx context.Context, in *GetByMetaRequest, opts ...grpc.CallOption) (*GetAttachmentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetAttachmentResponse)
+	err := c.cc.Invoke(ctx, GophKeep_GetAttachment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gophKeepClient) StartGetFileStream(ctx context.Context, in *StartGetFileStreamRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Chunk], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &GophKeep_ServiceDesc.Streams[1], GophKeep_StartGetFileStream_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[StartGetFileStreamRequest, Chunk]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type GophKeep_StartGetFileStreamClient = grpc.ServerStreamingClient[Chunk]
 
 func (c *gophKeepClient) ListAll(ctx context.Context, in *ListAllRequest, opts ...grpc.CallOption) (*ListAllResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
@@ -138,13 +159,14 @@ func (c *gophKeepClient) ListAll(ctx context.Context, in *ListAllRequest, opts .
 // All implementations must embed UnimplementedGophKeepServer
 // for forward compatibility.
 type GophKeepServer interface {
-	SaveCredentials(context.Context, *SaveCredentialsRequest) (*Status, error)
-	SaveBankCredentials(context.Context, *SaveBankCredentialsRequest) (*Status, error)
-	SaveFile(context.Context, *SaveFileRequest) (*SaveFileResponse, error)
-	StartSaveFileStream(grpc.BidiStreamingServer[FileChunk, Status]) error
+	SaveCredentials(context.Context, *SaveCredentialsRequest) (*SaveStatus, error)
 	GetCredentials(context.Context, *GetByMetaRequest) (*GetCredentialsResponse, error)
-	GetBankCredentials(context.Context, *GetByMetaRequest) (*GetBankCredentialsResponse, error)
-	GetFile(context.Context, *GetByMetaRequest) (*GetFileResponse, error)
+	SaveCard(context.Context, *SaveCardRequest) (*SaveStatus, error)
+	GetCard(context.Context, *GetByMetaRequest) (*GetCardResponse, error)
+	SaveAttachment(context.Context, *SaveFileRequest) (*SaveFileResponse, error)
+	StartSaveFileStream(grpc.ClientStreamingServer[Chunk, SaveStatus]) error
+	GetAttachment(context.Context, *GetByMetaRequest) (*GetAttachmentResponse, error)
+	StartGetFileStream(*StartGetFileStreamRequest, grpc.ServerStreamingServer[Chunk]) error
 	ListAll(context.Context, *ListAllRequest) (*ListAllResponse, error)
 	mustEmbedUnimplementedGophKeepServer()
 }
@@ -156,26 +178,29 @@ type GophKeepServer interface {
 // pointer dereference when methods are called.
 type UnimplementedGophKeepServer struct{}
 
-func (UnimplementedGophKeepServer) SaveCredentials(context.Context, *SaveCredentialsRequest) (*Status, error) {
+func (UnimplementedGophKeepServer) SaveCredentials(context.Context, *SaveCredentialsRequest) (*SaveStatus, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SaveCredentials not implemented")
-}
-func (UnimplementedGophKeepServer) SaveBankCredentials(context.Context, *SaveBankCredentialsRequest) (*Status, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SaveBankCredentials not implemented")
-}
-func (UnimplementedGophKeepServer) SaveFile(context.Context, *SaveFileRequest) (*SaveFileResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SaveFile not implemented")
-}
-func (UnimplementedGophKeepServer) StartSaveFileStream(grpc.BidiStreamingServer[FileChunk, Status]) error {
-	return status.Errorf(codes.Unimplemented, "method StartSaveFileStream not implemented")
 }
 func (UnimplementedGophKeepServer) GetCredentials(context.Context, *GetByMetaRequest) (*GetCredentialsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCredentials not implemented")
 }
-func (UnimplementedGophKeepServer) GetBankCredentials(context.Context, *GetByMetaRequest) (*GetBankCredentialsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetBankCredentials not implemented")
+func (UnimplementedGophKeepServer) SaveCard(context.Context, *SaveCardRequest) (*SaveStatus, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SaveCard not implemented")
 }
-func (UnimplementedGophKeepServer) GetFile(context.Context, *GetByMetaRequest) (*GetFileResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetFile not implemented")
+func (UnimplementedGophKeepServer) GetCard(context.Context, *GetByMetaRequest) (*GetCardResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCard not implemented")
+}
+func (UnimplementedGophKeepServer) SaveAttachment(context.Context, *SaveFileRequest) (*SaveFileResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SaveAttachment not implemented")
+}
+func (UnimplementedGophKeepServer) StartSaveFileStream(grpc.ClientStreamingServer[Chunk, SaveStatus]) error {
+	return status.Errorf(codes.Unimplemented, "method StartSaveFileStream not implemented")
+}
+func (UnimplementedGophKeepServer) GetAttachment(context.Context, *GetByMetaRequest) (*GetAttachmentResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAttachment not implemented")
+}
+func (UnimplementedGophKeepServer) StartGetFileStream(*StartGetFileStreamRequest, grpc.ServerStreamingServer[Chunk]) error {
+	return status.Errorf(codes.Unimplemented, "method StartGetFileStream not implemented")
 }
 func (UnimplementedGophKeepServer) ListAll(context.Context, *ListAllRequest) (*ListAllResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListAll not implemented")
@@ -219,49 +244,6 @@ func _GophKeep_SaveCredentials_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
-func _GophKeep_SaveBankCredentials_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SaveBankCredentialsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GophKeepServer).SaveBankCredentials(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: GophKeep_SaveBankCredentials_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GophKeepServer).SaveBankCredentials(ctx, req.(*SaveBankCredentialsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _GophKeep_SaveFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SaveFileRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GophKeepServer).SaveFile(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: GophKeep_SaveFile_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GophKeepServer).SaveFile(ctx, req.(*SaveFileRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _GophKeep_StartSaveFileStream_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(GophKeepServer).StartSaveFileStream(&grpc.GenericServerStream[FileChunk, Status]{ServerStream: stream})
-}
-
-// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type GophKeep_StartSaveFileStreamServer = grpc.BidiStreamingServer[FileChunk, Status]
-
 func _GophKeep_GetCredentials_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetByMetaRequest)
 	if err := dec(in); err != nil {
@@ -280,41 +262,95 @@ func _GophKeep_GetCredentials_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _GophKeep_GetBankCredentials_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetByMetaRequest)
+func _GophKeep_SaveCard_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SaveCardRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GophKeepServer).GetBankCredentials(ctx, in)
+		return srv.(GophKeepServer).SaveCard(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: GophKeep_GetBankCredentials_FullMethodName,
+		FullMethod: GophKeep_SaveCard_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GophKeepServer).GetBankCredentials(ctx, req.(*GetByMetaRequest))
+		return srv.(GophKeepServer).SaveCard(ctx, req.(*SaveCardRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _GophKeep_GetFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _GophKeep_GetCard_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetByMetaRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GophKeepServer).GetFile(ctx, in)
+		return srv.(GophKeepServer).GetCard(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: GophKeep_GetFile_FullMethodName,
+		FullMethod: GophKeep_GetCard_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GophKeepServer).GetFile(ctx, req.(*GetByMetaRequest))
+		return srv.(GophKeepServer).GetCard(ctx, req.(*GetByMetaRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
+
+func _GophKeep_SaveAttachment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SaveFileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GophKeepServer).SaveAttachment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GophKeep_SaveAttachment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GophKeepServer).SaveAttachment(ctx, req.(*SaveFileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GophKeep_StartSaveFileStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(GophKeepServer).StartSaveFileStream(&grpc.GenericServerStream[Chunk, SaveStatus]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type GophKeep_StartSaveFileStreamServer = grpc.ClientStreamingServer[Chunk, SaveStatus]
+
+func _GophKeep_GetAttachment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetByMetaRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GophKeepServer).GetAttachment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GophKeep_GetAttachment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GophKeepServer).GetAttachment(ctx, req.(*GetByMetaRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GophKeep_StartGetFileStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(StartGetFileStreamRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(GophKeepServer).StartGetFileStream(m, &grpc.GenericServerStream[StartGetFileStreamRequest, Chunk]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type GophKeep_StartGetFileStreamServer = grpc.ServerStreamingServer[Chunk]
 
 func _GophKeep_ListAll_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListAllRequest)
@@ -346,24 +382,24 @@ var GophKeep_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _GophKeep_SaveCredentials_Handler,
 		},
 		{
-			MethodName: "SaveBankCredentials",
-			Handler:    _GophKeep_SaveBankCredentials_Handler,
-		},
-		{
-			MethodName: "SaveFile",
-			Handler:    _GophKeep_SaveFile_Handler,
-		},
-		{
 			MethodName: "GetCredentials",
 			Handler:    _GophKeep_GetCredentials_Handler,
 		},
 		{
-			MethodName: "GetBankCredentials",
-			Handler:    _GophKeep_GetBankCredentials_Handler,
+			MethodName: "SaveCard",
+			Handler:    _GophKeep_SaveCard_Handler,
 		},
 		{
-			MethodName: "GetFile",
-			Handler:    _GophKeep_GetFile_Handler,
+			MethodName: "GetCard",
+			Handler:    _GophKeep_GetCard_Handler,
+		},
+		{
+			MethodName: "SaveAttachment",
+			Handler:    _GophKeep_SaveAttachment_Handler,
+		},
+		{
+			MethodName: "GetAttachment",
+			Handler:    _GophKeep_GetAttachment_Handler,
 		},
 		{
 			MethodName: "ListAll",
@@ -374,8 +410,12 @@ var GophKeep_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "StartSaveFileStream",
 			Handler:       _GophKeep_StartSaveFileStream_Handler,
-			ServerStreams: true,
 			ClientStreams: true,
+		},
+		{
+			StreamName:    "StartGetFileStream",
+			Handler:       _GophKeep_StartGetFileStream_Handler,
+			ServerStreams: true,
 		},
 	},
 	Metadata: "proto/gophkeep.proto",
