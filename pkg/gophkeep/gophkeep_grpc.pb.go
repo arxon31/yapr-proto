@@ -38,7 +38,7 @@ type GophKeepClient interface {
 	GetCredentials(ctx context.Context, in *GetByMetaRequest, opts ...grpc.CallOption) (*GetCredentialsResponse, error)
 	SaveCard(ctx context.Context, in *SaveCardRequest, opts ...grpc.CallOption) (*SaveStatus, error)
 	GetCard(ctx context.Context, in *GetByMetaRequest, opts ...grpc.CallOption) (*GetCardResponse, error)
-	SaveAttachment(ctx context.Context, in *SaveFileRequest, opts ...grpc.CallOption) (*SaveFileResponse, error)
+	SaveAttachment(ctx context.Context, in *SaveAttachmentRequest, opts ...grpc.CallOption) (*SaveAttachmentResponse, error)
 	StartSaveFileStream(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[Chunk, SaveStatus], error)
 	GetAttachment(ctx context.Context, in *GetByMetaRequest, opts ...grpc.CallOption) (*GetAttachmentResponse, error)
 	StartGetFileStream(ctx context.Context, in *StartGetFileStreamRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Chunk], error)
@@ -93,9 +93,9 @@ func (c *gophKeepClient) GetCard(ctx context.Context, in *GetByMetaRequest, opts
 	return out, nil
 }
 
-func (c *gophKeepClient) SaveAttachment(ctx context.Context, in *SaveFileRequest, opts ...grpc.CallOption) (*SaveFileResponse, error) {
+func (c *gophKeepClient) SaveAttachment(ctx context.Context, in *SaveAttachmentRequest, opts ...grpc.CallOption) (*SaveAttachmentResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SaveFileResponse)
+	out := new(SaveAttachmentResponse)
 	err := c.cc.Invoke(ctx, GophKeep_SaveAttachment_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -163,7 +163,7 @@ type GophKeepServer interface {
 	GetCredentials(context.Context, *GetByMetaRequest) (*GetCredentialsResponse, error)
 	SaveCard(context.Context, *SaveCardRequest) (*SaveStatus, error)
 	GetCard(context.Context, *GetByMetaRequest) (*GetCardResponse, error)
-	SaveAttachment(context.Context, *SaveFileRequest) (*SaveFileResponse, error)
+	SaveAttachment(context.Context, *SaveAttachmentRequest) (*SaveAttachmentResponse, error)
 	StartSaveFileStream(grpc.ClientStreamingServer[Chunk, SaveStatus]) error
 	GetAttachment(context.Context, *GetByMetaRequest) (*GetAttachmentResponse, error)
 	StartGetFileStream(*StartGetFileStreamRequest, grpc.ServerStreamingServer[Chunk]) error
@@ -190,7 +190,7 @@ func (UnimplementedGophKeepServer) SaveCard(context.Context, *SaveCardRequest) (
 func (UnimplementedGophKeepServer) GetCard(context.Context, *GetByMetaRequest) (*GetCardResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCard not implemented")
 }
-func (UnimplementedGophKeepServer) SaveAttachment(context.Context, *SaveFileRequest) (*SaveFileResponse, error) {
+func (UnimplementedGophKeepServer) SaveAttachment(context.Context, *SaveAttachmentRequest) (*SaveAttachmentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SaveAttachment not implemented")
 }
 func (UnimplementedGophKeepServer) StartSaveFileStream(grpc.ClientStreamingServer[Chunk, SaveStatus]) error {
@@ -299,7 +299,7 @@ func _GophKeep_GetCard_Handler(srv interface{}, ctx context.Context, dec func(in
 }
 
 func _GophKeep_SaveAttachment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SaveFileRequest)
+	in := new(SaveAttachmentRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -311,7 +311,7 @@ func _GophKeep_SaveAttachment_Handler(srv interface{}, ctx context.Context, dec 
 		FullMethod: GophKeep_SaveAttachment_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GophKeepServer).SaveAttachment(ctx, req.(*SaveFileRequest))
+		return srv.(GophKeepServer).SaveAttachment(ctx, req.(*SaveAttachmentRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
